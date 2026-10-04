@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>The Lashbury Cup 2027</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #111;
+            --card-bg: #fff;
+            --primary: #0070f3;
+            --border: #eaeaea;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #111;
+                --text-color: #eee;
+                --card-bg: #222;
+                --primary: #3291ff;
+                --border: #333;
+            }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        #app { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+        h1, h2, h3 { margin-top: 0; }
+        input[type="text"], input[type="password"] {
+            width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 5px;
+            background: var(--bg-color); color: var(--text-color); box-sizing: border-box;
+        }
+        button {
+            background: var(--primary); color: #fff; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 10px;
+        }
+        button:active { opacity: 0.8; }
+        .btn-secondary { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .event-list { display: grid; gap: 10px; }
+        .event-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+        .match-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding: 10px 0; }
+        .score-input { width: 50px !important; text-align: center; }
+        .badge { background: #ff4d4f; color: white; padding: 2px 6px; border-radius: 12px; font-size: 0.8em; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+    // --- Application State ---
+    let S = JSON.parse(localStorage.getItem('tt_local')) || null;
+    let config = JSON.parse(localStorage.getItem('tt_config')) || { owner: '', repo: '', token: '' };
+    let fileSha = null;
+
+    // --- Core Logic & Data Initialization ---
+    const defaultData = {
+        title: "The Lashbury Cup 2027",
+        players: [
+            { id: 'p1', name: 'Ash', notes: 'Unavailable for Snooker commitments' },
+            { id: 'p2', name: 'Nick', notes: 'Strong at Snooker / Avoid Racquet sports' },
+            // Remaining 14 players will be added here
+        ],
+        events: {
+            'snooker': { id: 'snooker', name: 'Snooker', type: 'pairs', draw: [] },
+            'darts': { id: 'darts', name: 'Darts', type: 'pairs', draw: [] }, // Will inherit Snooker draw
+            'can-off': { id: 'can-off', name: 'Can-off', type: 'pairs', draw: [] },
+            'molkky': { id: 'molkky', name: 'Mölkky', type: 'pairs', draw: [] } // Will inherit Can-off draw
+            // Remaining 19 events will be added here
+        },
+        scores: {}
+    };
+
+    // Linked Draw Logic (The Core Update)
+    function getEventDraw(eventId) {
+        if (!S) return [];
+        if (eventId === 'darts') return S.events['snooker'].draw || [];
+        if (eventId === 'molkky') return S.events['can-off'].draw || [];
+        return S.events[eventId].draw || [];
+    }
+
+    // --- GitHub API Integration ---
+    async function fetchFromGitHub() {
+        const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/data.json`;
+        try {
+            const res = await fetch(url, { headers: { 'Authorization': `Bearer ${config.token}` } });
+            if (res.status === 404) {
+                S = defaultData;
+                await pushToGitHub("Initialize Lashbury Cup data");
+                return true;
+            }
+            const data = await res.json();
+            fileSha = data.sha;
+            S = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+            localStorage.setItem('tt_local', JSON.stringify(S));
+            return true;
+        } catch (e) {
+            alert('Error fetching data. Check connection or PAT scope.');
+            return false;
+        }
+    }
+
+    async function pushToGitHub(message = "Update scores") {
+        if (!S) return;
+        localStorage.setItem('tt_local', JSON.stringify(S));
+        
+        if (!navigator.onLine) {
+            localStorage.setItem('tt_sync_pending', 'true');
+            alert('Offline mode: Data saved locally. Will sync when connection returns.');
+            return;
+        }
+
+        const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/data.json`;
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(S, null, 2))));
+        
+        const body = { message, content, sha: fileSha };
+        
+        try {
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${config.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            fileSha = data.content.sha;
+            localStorage.removeItem('tt_sync_pending');
+        } catch (e) {
+            localStorage.setItem('tt_sync_pending', 'true');
+        }
+    }
+
+    // --- Offline Resilience ---
+    window.addEventListener('online', () => {
+        if (localStorage.getItem('tt_sync_pending')) {
+            pushToGitHub("Background sync on reconnect").then(() => renderDashboard());
+        }
+    });
+
+    // --- Rendering Engine ---
+    const appDiv = document.getElementById('app');
+
+    function renderLogin() {
+        appDiv.innerHTML = `
+            <div class="card">
+                <h2>Admin Login</h2>
+                <p>Enter repository details and your Fine-Grained PAT.</p>
+                <input type="text" id="repoOwner" placeholder="GitHub Username" value="${config.owner}">
+                <input type="text" id="repoName" placeholder="Repository Name" value="${config.repo}">
+                <input type="password" id="repoToken" placeholder="Personal Access Token" value="${config.token}">
+                <button onclick="handleLogin()">Load Tournament</button>
+            </div>
+        `;
+    }
+
+    async function handleLogin() {
+        config.owner = document.getElementById('repoOwner').value;
+        config.repo = document.getElementById('repoName').value;
+        config.token = document.getElementById('repoToken').value;
+        localStorage.setItem('tt_config', JSON.stringify(config));
+        
+        appDiv.innerHTML = `<p>Loading data from GitHub...</p>`;
+        const success = await fetchFromGitHub();
+        if (success) renderDashboard();
+        else renderLogin();
+    }
+
+    function renderDashboard() {
+        if (!S) return renderLogin();
+        const pendingSync = localStorage.getItem('tt_sync_pending') ? '<span class="badge">Offline Sync Pending</span>' : '';
+        
+        let html = `
+            <h2>${S.title} ${pendingSync}</h2>
+            <div class="event-list">
+        `;
+        
+        for (const key in S.events) {
+            const e = S.events[key];
+            const linkNote = (key === 'darts') ? ' (Linked to Snooker)' : (key === 'molkky') ? ' (Linked to Can-off)' : '';
+            html += `
+                <div class="event-item" onclick="renderEventView('${key}')">
+                    <span><strong>${e.name}</strong>${linkNote}</span>
+                    <span>></span>
+                </div>
+            `;
+        }
+        
+        html += `</div><br><button class="btn-secondary" onclick="fetchFromGitHub().then(renderDashboard)">Force Refresh from GitHub</button>`;
+        appDiv.innerHTML = html;
+    }
+
+    function renderEventView(eventId) {
+        const ev = S.events[eventId];
+        const draw = getEventDraw(eventId); 
+        
+        let html = `
+            <button class="btn-secondary" onclick="renderDashboard()" style="width: auto;">&larr; Back</button>
+            <h2>${ev.name}</h2>
+            <div class="card">
+        `;
+
+        if (draw.length === 0) {
+            html += `<p>No pairings established yet.</p>`;
+        } else {
+            draw.forEach((match, index) => {
+                const matchId = `${eventId}_m${index}`;
+                const scores = S.scores[matchId] || { t1: '', t2: '' };
+                html += `
+                    <div class="match-row">
+                        <div>${match.team1}</div>
+                        <div>
+                            <input type="text" class="score-input" id="score_t1_${matchId}" value="${scores.t1}">
+                            -
+                            <input type="text" class="score-input" id="score_t2_${matchId}" value="${scores.t2}">
+                        </div>
+                        <div>${match.team2}</div>
+                    </div>
+                `;
+            });
+            html += `<button onclick="saveScores('${eventId}')" style="margin-top: 20px;">Save Scores</button>`;
+        }
+        
+        html += `</div>`;
+        appDiv.innerHTML = html;
+    }
+
+    window.saveScores = function(eventId) {
+        const draw = getEventDraw(eventId);
+        draw.forEach((match, index) => {
+            const matchId = `${eventId}_m${index}`;
+            const t1Score = document.getElementById(`score_t1_${matchId}`).value;
+            const t2Score = document.getElementById(`score_t2_${matchId}`).value;
+            S.scores[matchId] = { t1: t1Score, t2: t2Score };
+        });
+        
+        appDiv.innerHTML = `<p>Saving to GitHub...</p>`;
+        pushToGitHub(`Update scores for ${eventId}`).then(() => renderDashboard());
+    }
+
+    // --- Boot ---
+    if (config.token && S) {
+        renderDashboard();
+        fetchFromGitHub().then(renderDashboard); // Background update
+    } else {
+        renderLogin();
+    }
+</script>
+</body>
+</html>
