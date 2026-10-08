@@ -9,6 +9,11 @@
   "theme_color": "#1d1d1b",
   "orientation": "portrait-primary",
   "icons": [
-    {"src":"icons/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+    {
+      "src": "icons/lashbury-icon.jpg",
+      "sizes": "128x128",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
   ]
 }
