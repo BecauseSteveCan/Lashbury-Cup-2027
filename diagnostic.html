@@ -1,0 +1,7 @@
+<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lashbury diagnostic</title>
+<body style="font:16px system-ui;padding:24px"><h2>Lashbury Cup diagnostic</h2><p id="out">Testing…</p><script>
+(async()=>{const o=document.getElementById("out");try{
+const r=await fetch("./data.json?x="+Date.now(),{cache:"no-store"});const t=await r.text();
+o.innerHTML=r.ok?"<b>Website: OK</b><br>data.json: OK<br>Bytes: "+t.length:"<b>data.json failed</b><br>HTTP "+r.status;
+}catch(e){o.innerHTML="<b>JavaScript/network error</b><br>"+String(e)}
+})();</script>
