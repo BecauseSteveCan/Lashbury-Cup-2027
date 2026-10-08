@@ -495,7 +495,7 @@ function render(auto){owner=admin&&(!S.ownerHash||LS.get("tt_owner")===S.ownerHa
 try{const c=JSON.parse(LS.get("tt_local")||"null");if(c&&c.s&&c.s.teams)S=c.s}catch(e){}
 render();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
-admin=!!LS.get("tt_token");if(!LS.get("tt_local"))loaded=false;{const mt=LS.get("tt_team");myTeam=mt===null||mt===""?null:+mt}
+admin=!!LS.get("tt_token");{const mt=LS.get("tt_team");myTeam=mt===null||mt===""?null:+mt}
 try{ADM=JSON.parse(LS.get("tt_adm")||"{}")}catch(e){}
 try{const l=JSON.parse(LS.get("tt_local")||"null");if(admin&&l&&l.dirty&&l.s){S=l.s;dirty=true}}catch(e){}
 render();status();load().finally(()=>{migrate()});if(dirty)push();
