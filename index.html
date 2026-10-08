@@ -444,6 +444,15 @@ function welcomeCountdown(){
   return days>0?days+"d "+String(hours).padStart(2,"0")+"h "+String(mins).padStart(2,"0")+"m":hours+"h "+String(mins).padStart(2,"0")+"m "+String(secs).padStart(2,"0")+"s";
 }
 function updateWelcomeCountdown(){const el=$("#welcome-countdown");if(el)el.textContent=welcomeCountdown()}
+function vTeams(){
+  return `<div class="banner"><h1>Teams</h1><div class="mu">The Lashbury Cup 2027</div></div>
+  <div class="grid two">${S.teams.map(t=>`<div class="card"><h2 style="color:${t.color}">${esc(t.name)}</h2><div>${(t.players||[]).map(p=>`<div style="padding:7px 0;border-bottom:1px solid var(--bd)">${esc(p)}</div>`).join("")||'<div class="mu">No players listed</div>'}</div></div>`).join("")}</div>`;
+}
+function vMvp(){
+  const rows=Object.entries(S.res||{}).flatMap(([id,v])=>(v||[]).map(x=>({id,name:x[0],pts:+x[1]||0}))).sort((a,b)=>b.pts-a.pts);
+  return `<div class="banner"><h1>⭐ MVP</h1><div class="mu">Tournament MVP leaderboard</div></div>
+  <div class="card">${rows.length?rows.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd)"><span>${i+1}. ${esc(r.name)}</span><b>${r.pts}</b></div>`).join(""):'<div class="mu">No MVP results yet.</div>'}</div>`;
+}
 function vWelcome(){
   const p=pts(),total=S.events.filter(e=>!e.pub).length,completed=S.events.filter(e=>!e.pub&&isDone(e)).length,pct=total?Math.round(completed*100/total):0;
   const before=Date.now()<new Date(dates()[0]+"T09:00:00+01:00").getTime();
