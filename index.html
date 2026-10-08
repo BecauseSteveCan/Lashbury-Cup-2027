@@ -524,6 +524,7 @@ function vWelcome(){
     <button class="b" onclick="tab='teams';render()">👥 Teams</button><button class="b" onclick="tab='league';render()">🏆 League</button>
     <button class="b" onclick="tab='events';render()">📊 Results</button><button class="b" onclick="tab='pub';render()">🍻 Pub Golf</button>
     <button class="b" onclick="tab='feed';render()">💬 Updates</button>
+    ${!admin?`<button class="b" onclick="login()">🔑 Admin</button>`:(!owner?`<button class="b" onclick="ownerLogin()">🔐 Owner</button>`:"")}
   </div></div>
   <div class="card"><h2>📍 The Manor Hotel</h2><div class="mu">Okehampton, Devon</div><button class="b" onclick="window.open('https://www.google.com/maps/search/?api=1&query=The+Manor+Hotel+Okehampton+Devon','_blank')">Open in Maps</button></div>
   <div class="mu" style="text-align:center;margin:18px 0">Last updated ${lu()}</div>`;
@@ -554,7 +555,7 @@ function render(auto){owner=admin&&(!S.ownerHash||LS.get("tt_owner")===S.ownerHa
   const a=document.activeElement;if(a&&a.tagName==="TEXTAREA"&&a.id==="msg"&&a.value)return;
   ytOn=false;const y=window.scrollY;$("#app").innerHTML=v();window.scrollTo(0,y);if(tab==="mvp"&&S.mvp&&!fired){fired=true;confetti()}
   const tabs=[["welcome","🏠 Welcome"],["teams","👥 Teams"],["league","🏆 League"],["events","📊 Results"],["pub","🍻 Pub Golf"],["feed","💬 Updates"]];if(owner)tabs.splice(4,0,["mvp","⭐ MVP"]);if(owner)tabs.push(["setup","⚙️ Setup"]);
-  $("#nav").innerHTML=tabs.map(([k,l])=>`<button class="${tab===k?"on":""}" onclick="tab='${k}';render()"><span style="font-size:17px;display:block">${l.split(" ")[0]}</span>${l.split(" ").slice(1).join(" ")}</button>`).join("")+(!admin?`<button onclick="login()"><span style="font-size:17px;display:block">🔑</span>Admin</button>`:(owner?"":`<button onclick="ownerLogin()"><span style="font-size:17px;display:block">🔐</span>Owner</button>`));
+  $("#nav").innerHTML=tabs.map(([k,l])=>`<button class="${tab===k?"on":""}" onclick="tab='${k}';render()"><span style="font-size:17px;display:block">${l.split(" ")[0]}</span>${l.split(" ").slice(1).join(" ")}</button>`).join("");
 }
 try{const c=JSON.parse(LS.get("tt_local")||"null");if(c&&c.s&&c.s.teams)S=c.s}catch(e){}
 try{render()}catch(e){document.body.innerHTML='<pre style="white-space:pre-wrap;padding:20px;font:16px monospace;color:#b00">Lashbury startup error\\n'+(e&&e.stack||e)+'</pre>'}
