@@ -544,7 +544,7 @@ function render(auto){owner=admin&&(!S.ownerHash||LS.get("tt_owner")===S.ownerHa
   const a=document.activeElement;if(a&&a.tagName==="TEXTAREA"&&a.id==="msg"&&a.value)return;
   ytOn=false;const y=window.scrollY;$("#app").innerHTML=v();window.scrollTo(0,y);if(tab==="mvp"&&S.mvp&&!fired){fired=true;confetti()}
   const tabs=[["welcome","🏠 Welcome"],["teams","👥 Teams"],["league","🏆 League"],["events","📊 Results"],["pub","🍻 Pub Golf"],["feed","💬 Updates"]];if(owner)tabs.splice(4,0,["mvp","⭐ MVP"]);if(owner)tabs.push(["setup","⚙️ Setup"]);
-  $("#nav").innerHTML=tabs.map(([k,l])=>`<button class="${tab===k?"on":""}" onclick="tab='${k}';render()"><span style="font-size:17px;display:block">${l.split(" ")[0]}</span>${l.split(" ").slice(1).join(" ")}</button>`).join("");
+  $("#nav").innerHTML=tabs.map(([k,l])=>`<button class="${tab===k?"on":""}" onclick="tab='${k}';render()"><span style="font-size:17px;display:block">${l.split(" ")[0]}</span>${l.split(" ").slice(1).join(" ")}</button>`).join("")+(admin&&!owner?`<button onclick="ownerLogin()"><span style="font-size:17px;display:block">🔐</span>Owner</button>`:"");
 }
 try{const c=JSON.parse(LS.get("tt_local")||"null");if(c&&c.s&&c.s.teams)S=c.s}catch(e){}
 render();
