@@ -102,7 +102,6 @@ function evScore(e){const t=[0,0],P=+e.points||0;
   else if(e.fmt!=="rr")(e.matches||[]).forEach(m=>{if(m.w==="d"){t[0]+=P/2;t[1]+=P/2}else if(m.w===0||m.w===1)t[m.w]+=P});
   return t}
 let TB=false;
-function lu(){return new Date().toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}
 function pts(){const t=[0,0];S.events.forEach(e=>{if(!e.spurs){const q=evScore(e);t[0]+=q[0];t[1]+=q[1]}});TB=false;return t}
 function wa(text){window.open("https://wa.me/?text="+encodeURIComponent(text),"_blank")}
 function post(text){S.feed.unshift({id:uid(),t:Date.now(),text});S.feed=S.feed.slice(0,100)}
@@ -504,8 +503,6 @@ function vMvp(){
   return `<div class="banner"><h1>⭐ MVP</h1><div class="mu">Tournament MVP leaderboard</div></div>
   <div class="card">${rows.length?rows.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd)"><span>${i+1}. ${esc(r.name)}</span><b>${r.pts}</b></div>`).join(""):'<div class="mu">No MVP results yet.</div>'}</div>`;
 }
-const evPts=evScore;
-const isDone=e=>!!(e.matches||[]).length&&((e.fmt==="rr"||e.fmt==="ss")?rr(e).every(r=>r.st==="point"||r.st==="no")&&(e.fmt!=="ss"||e.matches.filter(m=>m.k!=="p").every(m=>m.w!==null)):e.matches.every(m=>m.w!==null));
 const lu=()=>{const d=S.ts?new Date(S.ts):new Date();return d.toLocaleString("en-GB",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});};
 function vWelcome(){
   const p=pts(),total=S.events.filter(e=>!e.pub).length,completed=S.events.filter(e=>!e.pub&&isDone(e)).length,pct=total?Math.round(completed*100/total):0;
