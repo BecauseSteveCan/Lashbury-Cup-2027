@@ -541,6 +541,8 @@ function addEv(){if(!owner)return;const n=$("#en").value.trim();if(!n)return;S.e
 function setPtsQ(id,v){S.events.find(e=>e.id===id).points=+v||0;saveQuiet()}
 function setPts(id,v){S.events.find(e=>e.id===id).points=+v||0;save()}
 const locked=e=>e.spurs?spLocked(e):[e,e.link?S.events.find(x=>x.id===e.link):null].some(x=>x&&((x.matches||[]).some(m=>m.w!==null)||Object.keys(x.po||{}).length>0));
+const spLocked=e=>[e].some(x=>x&&((x.matches||[]).some(m=>m.w!==null)||Object.keys(x.po||{}).length>0));
+function showDraw(){render()}
 function doDraw(id){
   const e=S.events.find(x=>x.id===id),q=e.link?S.events.find(x=>x.id===e.link):null;
   if(e.spurs&&!locked(e)){if(e.sp&&e.sp.slots&&e.sp.slots.length&&!confirm("Redraw who predicts what?"))return;spDraw(e);return}
