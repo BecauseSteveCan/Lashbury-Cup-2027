@@ -46,6 +46,7 @@ nav button{font-size:10px;padding:7px 0;min-width:0}.lu{display:grid;grid-templa
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
 video{width:100%;border-radius:14px;background:#000}
 
+.welcome-hero{padding:18px 14px}.welcome-hero img{max-width:230px;width:70%;height:auto;margin:auto}.countdown-card{text-align:center}.countdown{font-size:38px;font-weight:800;letter-spacing:1px;margin:5px 0}.progress{height:10px;border-radius:99px;background:var(--bd);overflow:hidden;margin-top:10px}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b));border-radius:99px}.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.quick-grid .b{width:100%}
 .app-install{display:flex;align-items:center;gap:12px;justify-content:center;text-align:left;padding:12px 14px}.app-install img{width:52px;height:52px;border-radius:12px;object-fit:cover}.app-install .b{margin:0}.install-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:grid;place-items:center;padding:20px}.install-modal .card{max-width:360px;width:100%;text-align:center}.install-modal img{width:82px;height:82px;border-radius:18px;margin:4px auto 10px;display:block}
 </style></head><body><main id="app"></main>
 <nav id="nav"></nav>
@@ -430,10 +431,37 @@ function installCard(){
   </div>`;
 }
 
+function welcomeCountdown(){
+  const [y,m,d]=dates()[0].split("-").map(Number);
+  const target=Date.UTC(y,m-1,d,9,0);
+  const diff=Math.max(0,target-Date.now());
+  const total=Math.floor(diff/1000),days=Math.floor(total/86400),hours=Math.floor(total%86400/3600),mins=Math.floor(total%3600/60),secs=total%60;
+  return days>0?days+"d "+String(hours).padStart(2,"0")+"h "+String(mins).padStart(2,"0")+"m":hours+"h "+String(mins).padStart(2,"0")+"m "+String(secs).padStart(2,"0")+"s";
+}
+function updateWelcomeCountdown(){const el=$("#welcome-countdown");if(el)el.textContent=welcomeCountdown()}
 function vWelcome(){
-  const L=timed(),f=L[0];
-  return `<div class="banner" style="--g:linear-gradient(90deg,${S.teams[0].color},${S.teams[1].color})"><img src="${LOGO}" alt="The Lashbury Cup 2027"><div class="mu">${DOW(dates()[0])} ${uk(dates()[0])} – ${DOW(dates()[1])} ${uk(dates()[1])}</div><div class="mu">Last updated ${lu()}</div></div>
-  ${installCard()}`;
+  const p=pts(),total=S.events.filter(e=>!e.pub).length,completed=S.events.filter(e=>!e.pub&&isDone(e)).length,pct=total?Math.round(completed*100/total):0;
+  const before=Date.now()<new Date(dates()[0]+"T09:00:00+01:00").getTime();
+  return `<div class="banner welcome-hero" style="--g:linear-gradient(135deg,${S.teams[0].color},${S.teams[1].color})">
+    <img src="${LOGO}" alt="The Lashbury Cup 2027"><h1 style="margin:8px 0 2px">The Lashbury Cup 2027</h1>
+    <div>${DOW(dates()[0])} ${uk(dates()[0])} – ${DOW(dates()[1])} ${uk(dates()[1])}</div>
+    <div class="mu" style="margin-top:6px">The weekend starts here.</div>
+  </div>
+  ${before?`<div class="card countdown-card"><div class="mu">🏆 THE COUNTDOWN</div><div id="welcome-countdown" class="countdown">${welcomeCountdown()}</div><div class="mu">until Day 1 tees off</div></div>`:""}
+  ${installCard()}
+  <div class="score">${S.teams.map((t,i)=>`<div style="background:${esc(t.color)}">${esc(t.name)}<b>${p[i]}</b></div>`).join("")}</div>
+  <div class="card"><div class="row" style="justify-content:space-between"><b>🏆 Tournament progress</b><span class="mu">${completed}/${total} events</span></div>
+    <div class="progress"><i style="width:${pct}%"></i></div>
+    <div class="mu" style="margin-top:7px">${pct===100?"All events complete. What a weekend.":pct?pct+"% of the tournament completed":"The competition hasn't started yet."}</div>
+  </div>
+  ${nextBlock()}
+  <div class="card"><h2>Quick access</h2><div class="quick-grid">
+    <button class="b" onclick="tab='teams';render()">👥 Teams</button><button class="b" onclick="tab='league';render()">🏆 League</button>
+    <button class="b" onclick="tab='events';render()">📊 Results</button><button class="b" onclick="tab='pub';render()">🍻 Pub Golf</button>
+    <button class="b" onclick="tab='feed';render()">💬 Updates</button><button class="b" onclick="tab='league';render()">📅 Timetable</button>
+  </div></div>
+  <div class="card"><h2>📍 The Manor Hotel</h2><div class="mu">Okehampton, Devon</div><button class="b" onclick="window.open('https://www.google.com/maps/search/?api=1&query=The+Manor+Hotel+Okehampton+Devon','_blank')">Open in Maps</button></div>
+  <div class="mu" style="text-align:center;margin:18px 0">Last updated ${lu()}</div>`;
 }
 
 const gated=()=>!admin&&!!S.gp&&LS.get("tt_gp")!==S.gp;
