@@ -343,35 +343,35 @@ function reveal(id){const e=S.events.find(x=>x.id===id),t=tallyEv(id);if(!t.leng
 function revealAll(){S.events.forEach(e=>{if(tallyEv(e.id).length&&!(S.res||{})[e.id])reveal(e.id)})}
 async function loadNames(){try{const ids=Object.keys(BAL),ps=await uapi.profiles(ids);ids.forEach(i=>NAMES[i]=(ps[i]&&ps[i].name)||"");render()}catch(e){}}
 function tally(){const t={};Object.entries(S.res||{}).forEach(([id,r])=>{const e=S.events.find(x=>x.id===id);if(!e)return;r.forEach(([p,c])=>{t[p]=t[p]||{n:0,l:[]};t[p].n+=c;t[p].l.push(e.name)})});return Object.entries(t).sort((a,b)=>b[1].n-a[1].n).map(([p,x])=>[p,x.l,x.n])}
-const gh=(()=>{const h=location.hostname,m=h.match(/^(.+)\.github\.io$/);return{owner:m?m[1]:"becausestevecan",repo:m?(location.pathname.split("/")[1]||m[1]+".github.io"):"Lashbury-Cup-2027",branch:"main",path:"data.json"}})();
-const RAW="./data.json";
-const API=`https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path}`;
-async function ghPut(j){
-  const H={Authorization:"Bearer "+LS.get("tt_token"),Accept:"application/vnd.github+json"};
-  let sha=null;const g=await fetch(API+"?ref="+gh.branch+"&t="+Date.now(),{headers:H});
-  let out=j;
-  if(g.ok){const gj=await g.json();sha=gj.sha;try{const R=JSON.parse(decodeURIComponent(escape(atob((gj.content||"").replace(/\n/g,"")))));if(R&&R.teams&&R.events)out=J(merge3(BASE?JSON.parse(BASE):undefined,JSON.parse(j),R))}catch(e){}}else if(g.status!==404)throw new Error("get "+g.status);
-  const body={message:"Update tournament data",content:btoa(unescape(encodeURIComponent(out))),branch:gh.branch};if(sha)body.sha=sha;
-  const p=await fetch(API,{method:"PUT",headers:H,body:JSON.stringify(body)});if(!p.ok)throw new Error("put "+p.status);BASE=out;LS.set("tt_base",out);sig=out;if(out!==j&&J(S)===j){S=JSON.parse(out);render(true)}return out}
+const API="https://api.lashbury.co.uk";
+let sessionRole="";
+async function api(path,opts={}){
+  const res=await fetch(API+path,{...opts,credentials:"include",headers:{"content-type":"application/json",...(opts.headers||{})}});
+  if(!res.ok){let e={};try{e=await res.json()}catch{};throw new Error(e.error||("Request failed ("+res.status+")"))}
+  return res.json();
+}
 async function load(){
   if(dirty){loaded=true;render(true);return}
-  const ac=new AbortController();const to=setTimeout(()=>ac.abort(),8000);
+  const ac=new AbortController(),to=setTimeout(()=>ac.abort(),8000);
   try{
-    const r=await fetch(RAW+"?t="+Date.now(),{cache:"no-store",signal:ac.signal});
-    if(!r.ok)return;
-    const t=await r.text();
-    lastSync=Date.now();
-    status();
+    const d=await api("/api/data",{signal:ac.signal}),t=JSON.stringify(d);
+    lastSync=Date.now();status();
     if(dirty||t===sig)return;
-    const d=JSON.parse(t);
     if(!d||!d.teams||!d.events)return;
     if(S.ts&&(d.ts||0)<=S.ts)return;
     S=d;sig=t;BASE=t;LS.set("tt_base",t);LS.set("tt_local",JSON.stringify({s:S,dirty:false}));
-    render(true);migrate();status()
-  }catch(e){}finally{clearTimeout(to);if(!loaded){loaded=true;render(true)}}
+    loaded=true;render(true);migrate();status();
+  }catch(e){
+    if(e.message==="Unauthorised"){sessionRole="";admin=false;owner=false;loaded=true;render()}
+  }finally{clearTimeout(to);if(!loaded){loaded=true;render(true)}}
 }
-function login(){if(admin){return}const t=prompt("Paste your GitHub admin token");if(t&&t.trim()){LS.set("tt_token",t.trim());admin=true;render();status();load().finally(()=>{migrate()})}}
-function logout(){if(confirm("Log out of admin on this device?")){LS.set("tt_token","");admin=false;tab="league";render();status()}}
+async function authenticate(pin){
+  const r=await api("/auth/login",{method:"POST",body:JSON.stringify({pin})});
+  sessionRole=r.role||"";admin=sessionRole==="admin"||sessionRole==="owner";owner=sessionRole==="owner";
+  gateErr=false;await load();render();status();
+}
+function login(){if(admin)return;const p=prompt("Admin PIN");if(!p)return;authenticate(p).catch(()=>{gateErr=true;render()})}
+async function logout(){if(!confirm("Log out on this device?"))return;try{await api("/auth/logout",{method:"POST"})}catch(e){}sessionRole="";admin=false;owner=false;tab="welcome";render();status()}
 const LINKS=[["Snooker","Darts","double"],["Can-Off","Mölkky","double"],["Basketball Hot Seat","Basketball Round the World",null]];
 function linkPairs(from){LINKS.forEach(([a,b,t],i)=>{if(from&&i<from)return;const x=S.events.find(e=>e.name===a),y=S.events.find(e=>e.name===b);if(x&&y){x.link=y.id;y.link=x.id;if(t){x.type=t;y.type=t}if(![...(x.matches||[]),...(y.matches||[])].some(m=>m.w!==null)){x.matches=[];y.matches=[];x.po={};y.po={}}}})}
 function setSportMvp(id,v){S.res=S.res||{};if(v)S.res[id]=[[v,1]];else delete S.res[id];save()}
