@@ -298,7 +298,7 @@ function revealAll(){S.events.forEach(e=>{if(tallyEv(e.id).length&&!(S.res||{})[
 async function loadNames(){try{const ids=Object.keys(BAL),ps=await uapi.profiles(ids);ids.forEach(i=>NAMES[i]=(ps[i]&&ps[i].name)||"");render()}catch(e){}}
 function tally(){const t={};Object.entries(S.res||{}).forEach(([id,r])=>{const e=S.events.find(x=>x.id===id);if(!e)return;r.forEach(([p,c])=>{t[p]=t[p]||{n:0,l:[]};t[p].n+=c;t[p].l.push(e.name)})});return Object.entries(t).sort((a,b)=>b[1].n-a[1].n).map(([p,x])=>[p,x.l,x.n])}
 const gh=(()=>{const h=location.hostname,m=h.match(/^(.+)\.github\.io$/);return{owner:m?m[1]:"becausestevecan",repo:m?(location.pathname.split("/")[1]||m[1]+".github.io"):"Lashbury-Cup-2027",branch:"main",path:"data.json"}})();
-const RAW=`https://raw.githubusercontent.com/${gh.owner}/${gh.repo}/${gh.branch}/${gh.path}`;
+const RAW="./data.json";
 const API=`https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path}`;
 async function ghPut(j){
   const H={Authorization:"Bearer "+LS.get("tt_token"),Accept:"application/vnd.github+json"};
