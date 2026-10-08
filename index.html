@@ -133,6 +133,50 @@ function result(id,i,w){const e=S.events.find(x=>x.id===id);if(!e)return;
 }
 const fmt=e=>[e.day?"Day "+e.day:"",e.time||"",e.venue||""].filter(Boolean).join(" · ");
 
+function potdBlock(){return "";}
+function dupWarn(){
+  const seen={},dups=[];
+  S.events.forEach(e=>{const k=(e.name||"").trim().toLowerCase();if(!k)return;(seen[k]??=[]).push(e.name)});
+  Object.values(seen).forEach(a=>{if(a.length>1)dups.push(a[0]+" ×"+a.length)});
+  return dups.length?`<div class="card"><b>⚠️ Duplicate events</b><div class="mu">${esc(dups.join(", "))}</div></div>`:"";
+}
+function spBlock(e){
+  if(!e.spurs)return "";
+  const sp=e.sp||{};
+  return `<div class="m mu">⚽ Spurs predictions${sp.slots?.length?` — ${sp.slots.length} prediction slots`:""}</div>`;
+}
+function mvpBlock(e){
+  if(!S.mvp||!S.mvp[e.id])return "";
+  return `<div class="m mu">⭐ MVP picks recorded for this event.</div>`;
+}
+function clearEvent(id){
+  if(!owner)return;
+  const e=S.events.find(x=>x.id===id);if(!e)return;
+  if(!confirm("Clear this draw and all results?"))return;
+  e.matches=[];delete e.sp;delete e.nom;delete e.po;S.nom=S.nom||{};delete S.nom[id];save();
+}
+function replayDraw(id){
+  const e=S.events.find(x=>x.id===id);if(!e)return;
+  alert((e.matches?.length?"Draw is already visible below.":"No draw has been made yet."));
+}
+function exportBackup(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="lashbury-cup-backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function copyBackup(){
+  const t=JSON.stringify(S,null,2);
+  try{await navigator.clipboard.writeText(t);alert("Backup copied to clipboard.")}catch(e){const b=$("#bk");b.value=t;b.focus();b.select();alert("Clipboard access was unavailable, so the backup has been placed in the box below.")}
+}
+function restoreBackup(){
+  if(!owner)return;
+  try{
+    const raw=$("#bk").value.trim();if(!raw)return;
+    const d=JSON.parse(raw);
+    if(!d||!Array.isArray(d.teams)||!Array.isArray(d.events))throw new Error("Invalid Lashbury backup");
+    if(!confirm("Restore this backup and replace the current tournament data?"))return;
+    S=d;save();
+  }catch(e){alert(e.message||"Could not restore backup.")}
+}
 function vLeague(){
   const p=pts();
   const done=S.events.filter(e=>e.matches?.length&&e.matches.every(m=>m.w!==null)).length;
