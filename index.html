@@ -560,7 +560,7 @@ function render(auto){owner=sessionRole==="owner";if(!owner&&(tab==="mvp"||tab==
   if(!loaded||gated()){gateView();return}if(auto&&((ytOn&&document.querySelector("#yt iframe"))||(mapOn&&document.querySelector("#mp iframe"))))return;
   const v={welcome:vWelcome,teams:vTeams,league:vLeague,events:vEvents,pub:vPub,mvp:vMvp,feed:vFeed,setup:vSetup,timetable:timetable}[tab];
   const a=document.activeElement;if(a&&a.tagName==="TEXTAREA"&&a.id==="msg"&&a.value)return;
-  ytOn=false;const y=window.scrollY;$("#app").innerHTML=v();window.scrollTo(0,y);if(tab==="mvp"&&S.mvp&&!fired){fired=true;confetti()}
+  ytOn=false;const y=window.scrollY;const roleLabel=sessionRole==="owner"?"Owner":sessionRole==="admin"?"Admin":"Guest";$("#app").innerHTML=`<div class="row" style="justify-content:flex-end;align-items:center;margin:0 0 8px"><span class="mu">Signed in as ${roleLabel}</span><button class="b" onclick="logout()">Log out</button></div>`+v();window.scrollTo(0,y);if(tab==="mvp"&&S.mvp&&!fired){fired=true;confetti()}
   const tabs=[["welcome","🏠 Welcome"],["teams","👥 Teams"],["league","🏆 League"],["events","📊 Results"],["pub","🍻 Pub Golf"],["feed","💬 Updates"]];if(owner)tabs.splice(4,0,["mvp","⭐ MVP"]);if(owner)tabs.push(["setup","⚙️ Setup"]);
   $("#nav").innerHTML=tabs.map(([k,l])=>`<button class="${tab===k?"on":""}" onclick="tab='${k}';render()"><span style="font-size:17px;display:block">${l.split(" ")[0]}</span>${l.split(" ").slice(1).join(" ")}</button>`).join("");
 }
