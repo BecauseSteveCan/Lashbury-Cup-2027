@@ -59,12 +59,14 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const TYPES={single:"Singles",double:"Doubles",team:"Team"};
 
-let dirty=false;
+let dirty=false,lastSync=0;
 const LS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 function status(){
   let el=$("#st");if(!el){el=document.createElement("div");el.id="st";el.style.cssText="position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);right:8px;font-size:12px;padding:3px 9px;border-radius:20px;background:var(--card);border:1px solid var(--bd);color:var(--mu);z-index:9";document.body.appendChild(el)}
   if(!admin||!ref){if(!navigator.onLine){el.style.display="block";el.textContent="📴 Offline – showing last saved data"}else el.style.display="none";return}
-  el.style.display="block";el.textContent=dirty?(ERR?"⚠️ Not saved ("+ERR+") – check admin token":"⏳ Not synced yet – will send when signal returns"):(navigator.onLine?"✓ Synced":"📴 Offline – nothing waiting");
+  el.style.display="block";
+  const syncLabel=lastSync?new Date(lastSync).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"}):"—";
+  el.textContent=dirty?(ERR?"⚠️ Not saved ("+ERR+") – check admin token":"⏳ Not synced yet – will send when signal returns"):(navigator.onLine?"✓ Synced · "+syncLabel:"📴 Offline · last synced "+syncLabel);
 }
 let ERR="";
 function saveQuiet(){S.ts=Date.now();LS.set("tt_local",JSON.stringify({s:S,dirty:admin&&!!ref}));if(!ref)return;dirty=true;status();clearTimeout(timer);timer=setTimeout(push,1500)}
@@ -358,6 +360,8 @@ async function load(){
     const r=await fetch(RAW+"?t="+Date.now(),{cache:"no-store",signal:ac.signal});
     if(!r.ok)return;
     const t=await r.text();
+    lastSync=Date.now();
+    status();
     if(dirty||t===sig)return;
     const d=JSON.parse(t);
     if(!d||!d.teams||!d.events)return;
@@ -566,6 +570,6 @@ admin=!!LS.get("tt_token");{const mt=LS.get("tt_team");myTeam=mt===null||mt===""
 try{ADM=JSON.parse(LS.get("tt_adm")||"{}")}catch(e){}
 try{const l=JSON.parse(LS.get("tt_local")||"null");if(admin&&l&&l.dirty&&l.s){S=l.s;dirty=true}}catch(e){}
 render();status();load().finally(()=>{migrate()});if(dirty)push();
-setInterval(load,45000);
+setInterval(load,30000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
 </script></body></html>
