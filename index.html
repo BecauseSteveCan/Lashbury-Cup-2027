@@ -370,10 +370,70 @@ function honour(){return `<h2>🏆 Roll of honour · 2026</h2>
   <div class="card"><div class="row" style="align-items:flex-start;flex-wrap:nowrap"><img src="${HON.alex}" alt="Alex Cannell" style="width:96px;border-radius:12px"><div><div class="mu">🏅 Last year's MVP</div><b style="font-size:18px">Alex Cannell</b><div class="mu" style="margin-top:4px">Awarded MVP for strong performances across the board and for proving a formidable competitor. His efforts at the oche on the Friday night crushed the soul of his White Team opponents, giving the Blacks a big foot up going into the second day.</div></div></div></div>
   <div class="card"><div class="row" style="align-items:flex-start;flex-wrap:nowrap"><img src="${HON.steve}" alt="Steve Hurley" style="width:120px;border-radius:12px"><div><div class="mu">🏆 The Andrew Weeks Trophy</div><b style="font-size:18px">Steve Hurley</b><div class="mu" style="margin-top:4px">Awarded by the previous holder for the single greatest event of the weekend. Steve won it by putting his ball in the cup of the 18th hole, teeing off on the first hole of foot golf. 🤦</div></div></div>
   <div style="text-align:center;margin-top:10px"><img src="${HON.trophy}" alt="The Andrew Weeks Trophy" style="height:170px"><div class="mu">The Andrew Weeks Trophy · Recognising Greatness</div></div></div>`}
+let deferredInstallPrompt=null;
+
+function appIsStandalone(){
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone===true;
+}
+
+function updateInstallCard(){
+  const el=$("#app-install");
+  if(el)el.style.display=appIsStandalone()?"none":"flex";
+}
+
+window.addEventListener("beforeinstallprompt",e=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  updateInstallCard();
+});
+
+window.addEventListener("appinstalled",()=>{
+  deferredInstallPrompt=null;
+  const m=$("#app-install-modal");if(m)m.remove();
+  updateInstallCard();
+});
+
+async function installApp(){
+  if(appIsStandalone())return;
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    try{await deferredInstallPrompt.userChoice}catch(e){}
+    deferredInstallPrompt=null;
+    updateInstallCard();
+    return;
+  }
+  showInstallHelp();
+}
+
+function showInstallHelp(){
+  if($("#app-install-modal"))return;
+  const ios=!!window.navigator.standalone||/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const guide=ios
+    ?'<p class="mu">In Safari, tap <b>Share</b>, then choose <b>Add to Home Screen</b>.</p>'
+    :'<p class="mu">Open your browser menu and choose <b>Install app</b> or <b>Add to Home screen</b>.</p>';
+  document.body.insertAdjacentHTML("beforeend",`<div id="app-install-modal" class="install-modal" onclick="if(event.target===this)this.remove()">
+    <div class="card">
+      <img src="icons/lashbury-cup-icon.png" alt="The Lashbury Cup">
+      <h2>Install The Lashbury Cup</h2>
+      ${guide}
+      <button class="b p" style="margin-top:8px" onclick="document.querySelector('#app-install-modal').remove()">Got it</button>
+    </div>
+  </div>`);
+}
+
+function installCard(){
+  if(appIsStandalone())return "";
+  return `<div id="app-install" class="card app-install">
+    <img src="icons/lashbury-cup-icon.png" alt="The Lashbury Cup">
+    <div style="flex:1"><h2 style="margin:0">Install the Cup</h2><div class="mu">Add the Lashbury Cup to your Home Screen.</div></div>
+    <button class="b p" onclick="installApp()">Install</button>
+  </div>`;
+}
+
 function vWelcome(){
   const L=timed(),f=L[0];
   return `<div class="banner" style="--g:linear-gradient(90deg,${S.teams[0].color},${S.teams[1].color})"><img src="${LOGO}" alt="The Lashbury Cup 2027"><div class="mu">${DOW(dates()[0])} ${uk(dates()[0])} – ${DOW(dates()[1])} ${uk(dates()[1])}</div><div class="mu">Last updated ${lu()}</div></div>
-  <div class="card app-install"><img src="icons/lashbury-cup-icon.png" alt="The Lashbury Cup"><h2>Install The Lashbury Cup</h2><div class="mu">${msg}</div><button class="b p" style="margin-top:12px" onclick="document.querySelector('#app-install-modal').remove()">Got it</button></div>`;
+  ${installCard()}`;
 }
 
 const gated=()=>!admin&&!!S.gp&&LS.get("tt_gp")!==S.gp;
