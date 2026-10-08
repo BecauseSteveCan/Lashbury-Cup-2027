@@ -560,7 +560,7 @@ function render(auto){owner=admin&&(!S.ownerHash||LS.get("tt_owner")===S.ownerHa
   $("#nav").innerHTML=tabs.map(([k,l])=>`<button class="${tab===k?"on":""}" onclick="tab='${k}';render()"><span style="font-size:17px;display:block">${l.split(" ")[0]}</span>${l.split(" ").slice(1).join(" ")}</button>`).join("")+(!admin?`<button onclick="login()"><span style="font-size:17px;display:block">🔑</span>Admin</button>`:(owner?"":`<button onclick="ownerLogin()"><span style="font-size:17px;display:block">🔐</span>Owner</button>`));
 }
 try{const c=JSON.parse(LS.get("tt_local")||"null");if(c&&c.s&&c.s.teams)S=c.s}catch(e){}
-render();
+try{render()}catch(e){document.body.innerHTML='<pre style="white-space:pre-wrap;padding:20px;font:16px monospace;color:#b00">Lashbury startup error\\n'+(e&&e.stack||e)+'</pre>'}
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 admin=!!LS.get("tt_token");{const mt=LS.get("tt_team");myTeam=mt===null||mt===""?null:+mt}
 try{ADM=JSON.parse(LS.get("tt_adm")||"{}")}catch(e){}
