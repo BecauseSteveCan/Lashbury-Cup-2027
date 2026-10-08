@@ -373,7 +373,7 @@ function honour(){return `<h2>🏆 Roll of honour · 2026</h2>
 function vWelcome(){
   const L=timed(),f=L[0];
   return `<div class="banner" style="--g:linear-gradient(90deg,${S.teams[0].color},${S.teams[1].color})"><img src="${LOGO}" alt="The Lashbury Cup 2027"><div class="mu">${DOW(dates()[0])} ${uk(dates()[0])} – ${DOW(dates()[1])} ${uk(dates()[1])}</div><div class="mu">Last updated ${lu()}</div></div>
-  <div class="card app-install"><img src="icons/lashbury-cup-icon.png" alt="The Lashbury Cup"><h2>Install The Lashbury Cup</h2><div class="mu">${msg}</div><button class="b p" style="margin-top:12px" onclick="document.querySelector('#app-install-modal').remove()">Got it</button></div></div>`);
+  <div class="card app-install"><img src="icons/lashbury-cup-icon.png" alt="The Lashbury Cup"><h2>Install The Lashbury Cup</h2><div class="mu">${msg}</div><button class="b p" style="margin-top:12px" onclick="document.querySelector('#app-install-modal').remove()">Got it</button></div>`;
 }
 
 const gated=()=>!admin&&!!S.gp&&LS.get("tt_gp")!==S.gp;
