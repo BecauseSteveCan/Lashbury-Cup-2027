@@ -10,8 +10,14 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "icons/lashbury-cup-icon.png",
-      "sizes": "460x465",
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
