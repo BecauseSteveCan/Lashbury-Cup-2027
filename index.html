@@ -513,7 +513,7 @@ function vWelcome(){
   <div class="card"><h2>Quick access</h2><div class="quick-grid">
     <button class="b" onclick="tab='teams';render()">👥 Teams</button><button class="b" onclick="tab='league';render()">🏆 League</button>
     <button class="b" onclick="tab='events';render()">📊 Results</button><button class="b" onclick="tab='pub';render()">🍻 Pub Golf</button>
-    <button class="b" onclick="tab='feed';render()">💬 Updates</button><button class="b" onclick="tab='league';render()">📅 Timetable</button>
+    <button class="b" onclick="tab='feed';render()">💬 Updates</button><button class="b" onclick="tab='timetable';render()">📅 Timetable</button>
   </div></div>
   <div class="card"><h2>📍 The Manor Hotel</h2><div class="mu">Okehampton, Devon</div><button class="b" onclick="window.open('https://www.google.com/maps/search/?api=1&query=The+Manor+Hotel+Okehampton+Devon','_blank')">Open in Maps</button></div>
   <div class="mu" style="text-align:center;margin:18px 0">Last updated ${lu()}</div>`;
@@ -540,7 +540,7 @@ function delEv(id){if(!owner)return;if(confirm("Delete event?")){S.events=S.even
 function sendMsg(w){const t=$("#msg").value.trim();if(!t)return;post(t);if(w)wa(t);save()}
 function render(auto){owner=admin&&(!S.ownerHash||LS.get("tt_owner")===S.ownerHash);if(!owner&&(tab==="mvp"||tab==="setup"))tab="league";{const n=LS.get("tt_team");myTeam=(n!==null&&n!==""&&S.tp&&S.tp[+n]&&LS.get("tt_tc")===S.tp[+n])?+n:null}
   if(!loaded||gated()){gateView();return}if(auto&&((ytOn&&document.querySelector("#yt iframe"))||(mapOn&&document.querySelector("#mp iframe"))))return;
-  const v={welcome:vWelcome,teams:vTeams,league:vLeague,events:vEvents,pub:vPub,mvp:vMvp,feed:vFeed,setup:vSetup}[tab];
+  const v={welcome:vWelcome,teams:vTeams,league:vLeague,events:vEvents,pub:vPub,mvp:vMvp,feed:vFeed,setup:vSetup,timetable:timetable}[tab];
   const a=document.activeElement;if(a&&a.tagName==="TEXTAREA"&&a.id==="msg"&&a.value)return;
   ytOn=false;const y=window.scrollY;$("#app").innerHTML=v();window.scrollTo(0,y);if(tab==="mvp"&&S.mvp&&!fired){fired=true;confetti()}
   const tabs=[["welcome","🏠 Welcome"],["teams","👥 Teams"],["league","🏆 League"],["events","📊 Results"],["pub","🍻 Pub Golf"],["feed","💬 Updates"]];if(owner)tabs.splice(4,0,["mvp","⭐ MVP"]);if(owner)tabs.push(["setup","⚙️ Setup"]);
