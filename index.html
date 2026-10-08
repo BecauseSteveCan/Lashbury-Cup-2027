@@ -51,6 +51,10 @@ video{width:100%;border-radius:14px;background:#000}
 </style></head><body><main id="app"></main>
 <nav id="nav"></nav>
 <script>
+window.addEventListener("error",function(e){document.body.innerHTML='<div style="font-family:system-ui;padding:30px;color:#111;background:#f6f5f1"><h2>Lashbury Cup — startup error</h2><pre style="white-space:pre-wrap;word-break:break-word">'+String(e.error?.stack||e.message||e).replace(/[&<>]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]})+'</pre></div>'});
+window.addEventListener("unhandledrejection",function(e){document.body.innerHTML='<div style="font-family:system-ui;padding:30px;color:#111;background:#f6f5f1"><h2>Lashbury Cup — startup error</h2><pre style="white-space:pre-wrap;word-break:break-word">'+String(e.reason?.stack||e.reason||e).replace(/[&<>]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]})+'</pre></div>'});
+</script>
+<script>
 let S={teams:[{name:"Red Team",color:"#d64545",players:[]},{name:"Blue Team",color:"#2f6fd6",players:[]}],events:[],feed:[]};
 let tab="welcome",plEd="",ref=true,admin=false,owner=false,myTeam=null,live=true,timer=null,sig="",loaded=true;
 const $=s=>document.querySelector(s);
