@@ -16,6 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Pillow
+        run: python -m pip install --disable-pip-version-check Pillow
+
       - name: Generate 192px and 512px icons
         run: |
           python - <<'PY'
