@@ -308,7 +308,7 @@ async function ghPut(j){
   const body={message:"Update tournament data",content:btoa(unescape(encodeURIComponent(out))),branch:gh.branch};if(sha)body.sha=sha;
   const p=await fetch(API,{method:"PUT",headers:H,body:JSON.stringify(body)});if(!p.ok)throw new Error("put "+p.status);BASE=out;LS.set("tt_base",out);sig=out;if(out!==j&&J(S)===j){S=JSON.parse(out);render(true)}return out}
 async function load(){
-  if(dirty){loaded=true;return}
+  if(dirty){loaded=true;render(true);return}
   try{const r=await fetch(RAW+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const t=await r.text();if(dirty||t===sig)return;
     const d=JSON.parse(t);if(!d||!d.teams||!d.events)return;if(S.ts&&(d.ts||0)<=S.ts)return;S=d;sig=t;BASE=t;LS.set("tt_base",t);LS.set("tt_local",JSON.stringify({s:S,dirty:false}));render(true);migrate();status()}catch(e){}finally{if(!loaded){loaded=true;render(true)}}}
 function login(){if(admin){return}const t=prompt("Paste your GitHub admin token");if(t&&t.trim()){LS.set("tt_token",t.trim());admin=true;render();status();load().finally(()=>{migrate()})}}
