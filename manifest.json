@@ -1,0 +1,14 @@
+{
+  "name": "The Lashbury Cup 2027",
+  "short_name": "Lashbury Cup",
+  "description": "The official Lashbury Cup 2027 tournament app.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f5f1",
+  "theme_color": "#1d1d1b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {"src":"icons/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
