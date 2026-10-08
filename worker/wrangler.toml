@@ -12,3 +12,6 @@ custom_domain = true
 
 [vars]
 CORS_ORIGIN = "https://lashbury.co.uk"
+
+[secrets]
+required = ["ADMIN_PIN", "OWNER_PIN", "GUEST_PIN"]
