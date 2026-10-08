@@ -52,7 +52,7 @@ video{width:100%;border-radius:14px;background:#000}
 <nav id="nav"></nav>
 <script>
 let S={teams:[{name:"Red Team",color:"#d64545",players:[]},{name:"Blue Team",color:"#2f6fd6",players:[]}],events:[],feed:[]};
-let tab="welcome",plEd="",ref=true,admin=false,owner=false,myTeam=null,live=true,timer=null,sig="";
+let tab="welcome",plEd="",ref=true,admin=false,owner=false,myTeam=null,live=true,timer=null,sig="",loaded=false;
 const $=s=>document.querySelector(s);
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Math.random().toString(36).slice(2,9);
