@@ -1,0 +1,15 @@
+<!doctype html>
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Refreshing Lashbury Cup…</title></head>
+<body style="font-family:system-ui;text-align:center;padding:40px;background:#1d1d1b;color:#fff">
+<h2>Refreshing Lashbury Cup…</h2><p>Please wait.</p>
+<script>
+(async()=>{
+  try{
+    const regs=await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r=>r.unregister()));
+    const keys=await caches.keys();
+    await Promise.all(keys.map(k=>caches.delete(k)));
+  }catch(e){}
+  location.replace("/?fresh="+Date.now());
+})();
+</script></body></html>
