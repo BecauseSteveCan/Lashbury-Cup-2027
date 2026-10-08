@@ -378,7 +378,7 @@ function splitEvents(){const out=[];S.events.forEach(e=>{
   else out.push(e)});S.events=out}
 async function sha(p){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("lc27:"+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 async function setPin(){if(!owner)return;const p=prompt("Choose an owner PIN. Don't share it with captains.");if(!p)return;S.ownerHash=await sha(p);LS.set("tt_owner",S.ownerHash);save()}
-async function ownerLogin(){if(!admin)return;if(!S.ownerHash){alert("No owner PIN set yet. Open Setup to create one.");return}const p=prompt("Owner PIN");if(!p)return;if((await sha(p))===S.ownerHash){LS.set("tt_owner",S.ownerHash);render();status()}else alert("Wrong PIN")}
+async async function ownerLogin(){if(!admin)return;if(!S.ownerHash){alert("No owner PIN set yet. Open Setup to create one.");return}const p=prompt("Owner PIN");if(!p)return;if((await sha(p))===S.ownerHash){LS.set("tt_owner",S.ownerHash);render();status()}else alert("Wrong PIN")}
 function setSize(id,v){const e=S.events.find(x=>x.id===id);if(+v>0)e.size=+v;else delete e.size;if(!(e.matches||[]).some(m=>m.w!==null))e.matches=[];save()}
 function setTime(id,v){S.events.find(x=>x.id===id).time=v;save()}
 function setF(id,k,v){const e=S.events.find(x=>x.id===id);e[k]=v;saveQuiet()}
