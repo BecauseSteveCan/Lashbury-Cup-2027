@@ -106,7 +106,7 @@ function evScore(e){const t=[0,0],P=+e.points||0;
   else if(e.fmt!=="rr")(e.matches||[]).forEach(m=>{if(m.w==="d"){t[0]+=P/2;t[1]+=P/2}else if(m.w===0||m.w===1)t[m.w]+=P});
   return t}
 let TB=false;
-function pts(){const t=[0,0];S.events.forEach(e=>{if(e.spurs)return;const q=evScore(e);t[0]+=q[0];t[1]+=q[1]});TB=false;const sp=spPts(),e=S.events.find(x=>x.spurs);if(sp&&e&&e.sp.score&&e.sp.scorer&&t[0]===t[1]&&(sp[0]||sp[1])&&S.events.filter(x=>!x.pub&&!x.spurs).every(isDone)){t[0]+=sp[0];t[1]+=sp[1];TB=true}return t}
+function pts(){const t=[0,0];S.events.forEach(e=>{if(!e.spurs){const q=evScore(e);t[0]+=q[0];t[1]+=q[1]}});TB=false;return t}
 function wa(text){window.open("https://wa.me/?text="+encodeURIComponent(text),"_blank")}
 function post(text){S.feed.unshift({id:uid(),t:Date.now(),text});S.feed=S.feed.slice(0,100)}
 function leagueText(){const p=pts();return `🏆 League update\n${S.teams.map((t,i)=>`${t.name}: ${p[i]}`).join("\n")}`}
