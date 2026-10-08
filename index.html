@@ -27,7 +27,7 @@ button.b,a.b{border:1px solid var(--bd);background:var(--card);color:var(--tx);b
 button.p{background:var(--ac);color:var(--bg);border-color:var(--ac)}
 input,select,textarea{font:inherit;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:7px;max-width:100%}
 textarea{width:100%;min-height:90px}
-.score{display:flex;gap:10px}.score>div{flex:1;border-radius:12px;padding:14px;color:#fff;text-align:center}
+.score{display:flex;gap:10px;margin:0 0 10px}.score>div{flex:1;min-width:0;box-sizing:border-box;border-radius:12px;padding:14px;color:#fff;text-align:center}
 .score b{font-size:34px;display:block}
 .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .m{border-top:1px solid var(--bd);padding:8px 0}
@@ -46,7 +46,7 @@ nav button{font-size:10px;padding:7px 0;min-width:0}.lu{display:grid;grid-templa
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
 video{width:100%;border-radius:14px;background:#000}
 
-.welcome-hero{padding:18px 14px}.welcome-hero img{max-width:230px;width:70%;height:auto;margin:auto}.countdown-card{text-align:center}.countdown{font-size:38px;font-weight:800;letter-spacing:1px;margin:5px 0}.progress{height:10px;border-radius:99px;background:var(--bd);overflow:hidden;margin-top:10px}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b));border-radius:99px}.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.quick-grid .b{width:100%}
+.welcome-hero{padding:18px 14px;margin-bottom:10px}.welcome-hero img{max-width:230px;width:70%;height:auto;margin:auto}.countdown-card{text-align:center}.countdown{font-size:38px;font-weight:800;letter-spacing:1px;margin:5px 0}.progress{height:10px;border-radius:99px;background:var(--bd);overflow:hidden;margin-top:10px}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b));border-radius:99px}.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.quick-grid .b{width:100%}
 .app-install{display:flex;align-items:center;gap:12px;justify-content:center;text-align:left;padding:12px 14px}.app-install img{width:52px;height:52px;border-radius:12px;object-fit:cover}.app-install .b{margin:0}.install-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:grid;place-items:center;padding:20px}.install-modal .card{max-width:360px;width:100%;text-align:center}.install-modal img{width:82px;height:82px;border-radius:18px;margin:4px auto 10px;display:block}
 </style></head><body><main id="app"></main>
 <nav id="nav"></nav>
