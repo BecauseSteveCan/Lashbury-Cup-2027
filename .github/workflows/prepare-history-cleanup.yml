@@ -1,0 +1,73 @@
+name: Prepare data.json history cleanup (no push)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type PREPARE to create a cleaned backup artifact only; this workflow never pushes"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    if: ${{ inputs.confirm == 'PREPARE' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install git-filter-repo
+        run: |
+          python -m pip install --user git-filter-repo
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Clone all repository branches into a mirror
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          git clone --mirror "https://github.com/$REPOSITORY.git" cleanup.git
+          git --git-dir=cleanup.git branch --list
+
+      - name: Verify expected branches exist
+        run: |
+          set -euo pipefail
+          for branch in main security-v1 bookmark-before-security; do
+            git --git-dir=cleanup.git show-ref --verify --quiet "refs/heads/$branch" || {
+              echo "Required branch missing: $branch"
+              exit 1
+            }
+          done
+
+      - name: Remove data.json from all reachable history
+        run: |
+          set -euo pipefail
+          git-filter-repo --git-dir cleanup.git --invert-paths --path data.json --force
+
+      - name: Verify cleaned history and branch preservation
+        run: |
+          set -euo pipefail
+          for branch in main security-v1 bookmark-before-security; do
+            git --git-dir=cleanup.git show-ref --verify --quiet "refs/heads/$branch" || {
+              echo "Branch missing after rewrite: $branch"
+              exit 1
+            }
+          done
+          if git --git-dir=cleanup.git log --all --oneline -- data.json | grep -q .; then
+            echo "FAIL: data.json is still present in reachable history"
+            exit 1
+          fi
+          echo "PASS: required branches exist and data.json is absent from reachable history."
+          git --git-dir=cleanup.git for-each-ref --format='%(refname:short) %(objectname)' refs/heads/
+
+      - name: Create downloadable cleaned mirror bundle
+        run: |
+          git --git-dir=cleanup.git bundle create cleaned-history.bundle --all
+          git bundle verify cleaned-history.bundle
+
+      - name: Upload cleaned bundle for review (no repository push)
+        uses: actions/upload-artifact@v4
+        with:
+          name: lashbury-cleaned-history-review
+          path: cleaned-history.bundle
+          if-no-files-found: error
+          retention-days: 7
