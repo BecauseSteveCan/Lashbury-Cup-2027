@@ -53,6 +53,12 @@ video{width:100%;border-radius:14px;background:#000}
 <script>
 let S={teams:[{name:"Red Team",color:"#d64545",players:[]},{name:"Blue Team",color:"#2f6fd6",players:[]}],events:[],feed:[]};
 let tab="welcome",plEd="",ref=true,admin=false,owner=false,myTeam=null,live=true,timer=null,sig="",loaded=true,gateErr=false,gateMessage="";
+let authNoticeTimer=null;
+function authNotice(message,kind="success"){
+  let el=$("#auth-notice");if(!el){el=document.createElement("div");el.id="auth-notice";el.setAttribute("role","status");el.setAttribute("aria-live","polite");document.body.appendChild(el)}
+  el.textContent=message;el.style.cssText="position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:12px;right:12px;z-index:200;padding:12px 16px;border-radius:12px;text-align:center;font-weight:600;box-shadow:0 3px 14px #0003;background:"+(kind==="error"?"#fde8e7":"#e1f5e5")+";color:"+(kind==="error"?"#9b1c16":"#176b2c")+";border:1px solid "+(kind==="error"?"#e6aaa6":"#a8d9b2");
+  clearTimeout(authNoticeTimer);authNoticeTimer=setTimeout(()=>el.remove(),6500);
+}
 const $=s=>document.querySelector(s);
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -370,10 +376,10 @@ async function load(){
 async function authenticate(pin){
   const r=await api("/auth/login",{method:"POST",body:JSON.stringify({pin})});
   sessionRole=r.role||"";admin=sessionRole==="admin"||sessionRole==="owner";owner=sessionRole==="owner";
-  gateErr=false;gateMessage="";await load();render();status();
+  gateErr=false;gateMessage="";await load();render();status();authNotice("Signed in successfully as "+(owner?"Owner":"Admin")+".");
 }
-function login(){if(admin)return;const p=prompt("Admin PIN");if(!p)return;authenticate(p).catch(()=>{gateErr=true;render()})}
-async function logout(){if(!confirm("Log out on this device?"))return;try{await api("/auth/logout",{method:"POST"})}catch(e){}sessionRole="";admin=false;owner=false;tab="welcome";render();status()}
+function login(){if(admin)return;const p=prompt("Admin PIN");if(!p)return;authenticate(p).catch(e=>{gateErr=true;gateMessage=(e.message&&/too many failed attempts|15 minutes/i.test(e.message))?"Too many failed attempts. Please wait 15 minutes before trying again.":"Incorrect PIN. Please try again.";render();authNotice(gateMessage,"error")})}
+async function logout(){if(!confirm("Log out on this device?"))return;try{await api("/auth/logout",{method:"POST"})}catch(e){}sessionRole="";admin=false;owner=false;tab="welcome";render();status();authNotice("You’ve been logged out.");}
 const LINKS=[["Snooker","Darts","double"],["Can-Off","Mölkky","double"],["Basketball Hot Seat","Basketball Round the World",null]];
 function linkPairs(from){LINKS.forEach(([a,b,t],i)=>{if(from&&i<from)return;const x=S.events.find(e=>e.name===a),y=S.events.find(e=>e.name===b);if(x&&y){x.link=y.id;y.link=x.id;if(t){x.type=t;y.type=t}if(![...(x.matches||[]),...(y.matches||[])].some(m=>m.w!==null)){x.matches=[];y.matches=[];x.po={};y.po={}}}})}
 function setSportMvp(id,v){S.res=S.res||{};if(v)S.res[id]=[[v,1]];else delete S.res[id];save()}
