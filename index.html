@@ -66,7 +66,7 @@ function status(){
   if(!admin||!ref){if(!navigator.onLine){el.style.display="block";el.textContent="📴 Offline – showing last saved data"}else el.style.display="none";return}
   el.style.display="block";
   const syncLabel=lastSync?new Date(lastSync).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"}):"—";
-  el.textContent=dirty?(ERR?"⚠️ Not saved ("+ERR+") – check admin token":"⏳ Not synced yet – will send when signal returns"):(navigator.onLine?"✓ Synced · "+syncLabel:"📴 Offline · last synced "+syncLabel);
+  el.textContent=dirty?(ERR?"⚠️ Not saved ("+ERR+") – check admin login":"⏳ Not synced yet – will send when signal returns"):(navigator.onLine?"✓ Synced · "+syncLabel:"📴 Offline · last synced "+syncLabel);
 }
 let ERR="";
 function saveQuiet(){S.ts=Date.now();LS.set("tt_local",JSON.stringify({s:S,dirty:admin&&!!ref}));if(!ref)return;dirty=true;status();clearTimeout(timer);timer=setTimeout(push,1500)}
@@ -77,12 +77,14 @@ function save(){
   dirty=true;status();
   clearTimeout(timer);timer=setTimeout(push,400);
 }
-function push(){
-  if(!ref||!dirty)return;
+async function push(){
+  if(!ref||!dirty||!sessionRole||!admin)return;
   const j=JSON.stringify(S);sig=j;
-  ghPut(j).then(out=>{
-    if(JSON.stringify(S)===j||JSON.stringify(S)===out){dirty=false;ERR="";LS.set("tt_local",JSON.stringify({s:S,dirty:false}))}
-    status()}).catch(e=>{ERR=e.message||"error";status()});
+  try{
+    await api("/api/data",{method:"PUT",body:j});
+    dirty=false;ERR="";lastSync=Date.now();LS.set("tt_local",JSON.stringify({s:S,dirty:false}));
+  }catch(e){ERR=e.message||"error"}
+  status();
 }
 setInterval(push,8000);
 addEventListener("online",push);addEventListener("online",()=>status());addEventListener("offline",()=>status());
@@ -207,7 +209,7 @@ function vFeed(){
   ${S.feed.map(f=>`<div class="card"><div class="mu">${new Date(f.t).toLocaleString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div><div style="white-space:pre-wrap">${esc(f.text)}</div><button class="b" onclick="wa(S.feed.find(x=>x.id=='${f.id}').text)">WhatsApp</button></div>`).join("")||'<p class="mu">Nothing yet.</p>'}`;
 }
 function vSetup(){
-  return `<h1>Setup</h1><div class="card"><h2>Tournament dates</h2><div class="row"><label>Day 1 <input type="date" value="${dates()[0]}" onchange="setDate(0,this.value)"></label><label>Day 2 <input type="date" value="${dates()[1]}" onchange="setDate(1,this.value)"></label></div></div>${dupWarn()}${nomCheck()}<div class="card"><h2>Backup</h2><div class="mu">Download or copy a full copy of the tournament data. GitHub also keeps every earlier version in the history of data.json.</div><button class="b" onclick="exportBackup()">Download backup</button> <button class="b" onclick="copyBackup()">Copy backup</button><textarea id="bk" placeholder="Paste a backup here to restore"></textarea><button class="b" onclick="restoreBackup()">Restore from pasted backup</button></div><div class="card"><h2>Owner PIN &amp; reset</h2><div class="mu">Guest PIN: <b>${S.gp?"ON":"OFF"}</b></div>${S.ownerHash?"":`<div class="mu">⚠️ No owner PIN set yet. Until you set one, anyone with an admin token has full owner access.</div>`}<div class="mu">Clears all draws, results, nominations, MVP picks and updates. Keeps teams, players, events and points.</div>${S.teams.map((t,i)=>`<button class="b" onclick="setTeamCode(${i})">${S.tp&&S.tp[i]?"Change":"Set"} ${esc(t.name)} captain code</button>`).join(" ")} <button class="b" onclick="setGuestPin()">${S.gp?"Change guest PIN":"Set guest PIN"}</button> ${S.gp?`<button class="b" onclick="clearGuestPin()">Remove guest PIN</button> `:""}<button class="b" onclick="setPin()">${S.ownerHash?"Change owner PIN":"Set owner PIN"}</button> <button class="b" onclick="logout()">Log out of admin</button> <button class="b" onclick="resetData()">Reset draws &amp; results</button></div>${live?"":`<p class="mu">Not signed in — changes won't be saved or shared.</p>`}
+  return `<h1>Setup</h1><div class="card"><h2>Tournament dates</h2><div class="row"><label>Day 1 <input type="date" value="${dates()[0]}" onchange="setDate(0,this.value)"></label><label>Day 2 <input type="date" value="${dates()[1]}" onchange="setDate(1,this.value)"></label></div></div>${dupWarn()}${nomCheck()}<div class="card"><h2>Backup</h2><div class="mu">Download or copy a full copy of the tournament data. GitHub also keeps every earlier version in the history of data.json.</div><button class="b" onclick="exportBackup()">Download backup</button> <button class="b" onclick="copyBackup()">Copy backup</button><textarea id="bk" placeholder="Paste a backup here to restore"></textarea><button class="b" onclick="restoreBackup()">Restore from pasted backup</button></div><div class="card"><h2>Owner PIN &amp; reset</h2><div class="mu">Guest PIN: <b>PROTECTED</b></div><div class="mu">PINs are stored securely by the tournament server.</div><div class="mu">Clears all draws, results, nominations, MVP picks and updates. Keeps teams, players, events and points.</div>${S.teams.map((t,i)=>`<button class="b" onclick="setTeamCode(${i})">${S.tp&&S.tp[i]?"Change":"Set"} ${esc(t.name)} captain code</button>`).join(" ")} <button class="b" onclick="setGuestPin()">Change guest PIN</button> <button class="b" onclick="setPin()">Change owner PIN</button> <button class="b" onclick="logout()">Log out of admin</button> <button class="b" onclick="resetData()">Reset draws &amp; results</button></div>${live?"":`<p class="mu">Not signed in — changes won't be saved or shared.</p>`}
   ${S.teams.map((t,i)=>`<div class="card"><div class="row"><input value="${esc(t.name)}" onchange="S.teams[${i}].name=this.value;save()"><input type="color" value="${esc(t.color)}" onchange="S.teams[${i}].color=this.value;save()"></div>
   <p class="mu">Players, one per line (${t.players.length})</p><textarea oninput="setPlayers(${i},this.value,false)" onchange="setPlayers(${i},this.value,true)">${esc(t.players.join("\n"))}</textarea></div>`).join("")}
   <p class="mu">Tip: only people with edit access to this page can run the tournament; everyone else sees a live read-only view. WhatsApp can't be posted to automatically from a web page, so “WhatsApp” buttons open a pre-written message for you to send to your group.</p>`;
@@ -343,35 +345,35 @@ function reveal(id){const e=S.events.find(x=>x.id===id),t=tallyEv(id);if(!t.leng
 function revealAll(){S.events.forEach(e=>{if(tallyEv(e.id).length&&!(S.res||{})[e.id])reveal(e.id)})}
 async function loadNames(){try{const ids=Object.keys(BAL),ps=await uapi.profiles(ids);ids.forEach(i=>NAMES[i]=(ps[i]&&ps[i].name)||"");render()}catch(e){}}
 function tally(){const t={};Object.entries(S.res||{}).forEach(([id,r])=>{const e=S.events.find(x=>x.id===id);if(!e)return;r.forEach(([p,c])=>{t[p]=t[p]||{n:0,l:[]};t[p].n+=c;t[p].l.push(e.name)})});return Object.entries(t).sort((a,b)=>b[1].n-a[1].n).map(([p,x])=>[p,x.l,x.n])}
-const gh=(()=>{const h=location.hostname,m=h.match(/^(.+)\.github\.io$/);return{owner:m?m[1]:"becausestevecan",repo:m?(location.pathname.split("/")[1]||m[1]+".github.io"):"Lashbury-Cup-2027",branch:"main",path:"data.json"}})();
-const RAW="./data.json";
-const API=`https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path}`;
-async function ghPut(j){
-  const H={Authorization:"Bearer "+LS.get("tt_token"),Accept:"application/vnd.github+json"};
-  let sha=null;const g=await fetch(API+"?ref="+gh.branch+"&t="+Date.now(),{headers:H});
-  let out=j;
-  if(g.ok){const gj=await g.json();sha=gj.sha;try{const R=JSON.parse(decodeURIComponent(escape(atob((gj.content||"").replace(/\n/g,"")))));if(R&&R.teams&&R.events)out=J(merge3(BASE?JSON.parse(BASE):undefined,JSON.parse(j),R))}catch(e){}}else if(g.status!==404)throw new Error("get "+g.status);
-  const body={message:"Update tournament data",content:btoa(unescape(encodeURIComponent(out))),branch:gh.branch};if(sha)body.sha=sha;
-  const p=await fetch(API,{method:"PUT",headers:H,body:JSON.stringify(body)});if(!p.ok)throw new Error("put "+p.status);BASE=out;LS.set("tt_base",out);sig=out;if(out!==j&&J(S)===j){S=JSON.parse(out);render(true)}return out}
+const API="https://api.lashbury.co.uk";
+let sessionRole="";
+async function api(path,opts={}){
+  const res=await fetch(API+path,{...opts,credentials:"include",headers:{"content-type":"application/json",...(opts.headers||{})}});
+  if(!res.ok){let e={};try{e=await res.json()}catch{};throw new Error(e.error||("Request failed ("+res.status+")"))}
+  return res.json();
+}
 async function load(){
   if(dirty){loaded=true;render(true);return}
-  const ac=new AbortController();const to=setTimeout(()=>ac.abort(),8000);
+  const ac=new AbortController(),to=setTimeout(()=>ac.abort(),8000);
   try{
-    const r=await fetch(RAW+"?t="+Date.now(),{cache:"no-store",signal:ac.signal});
-    if(!r.ok)return;
-    const t=await r.text();
-    lastSync=Date.now();
-    status();
+    const d=await api("/api/data",{signal:ac.signal}),t=JSON.stringify(d);
+    lastSync=Date.now();status();
     if(dirty||t===sig)return;
-    const d=JSON.parse(t);
     if(!d||!d.teams||!d.events)return;
     if(S.ts&&(d.ts||0)<=S.ts)return;
     S=d;sig=t;BASE=t;LS.set("tt_base",t);LS.set("tt_local",JSON.stringify({s:S,dirty:false}));
-    render(true);migrate();status()
-  }catch(e){}finally{clearTimeout(to);if(!loaded){loaded=true;render(true)}}
+    loaded=true;render(true);migrate();status();
+  }catch(e){
+    if(e.message==="Unauthorised"){sessionRole="";admin=false;owner=false;loaded=true;render()}
+  }finally{clearTimeout(to);if(!loaded){loaded=true;render(true)}}
 }
-function login(){if(admin){return}const t=prompt("Paste your GitHub admin token");if(t&&t.trim()){LS.set("tt_token",t.trim());admin=true;render();status();load().finally(()=>{migrate()})}}
-function logout(){if(confirm("Log out of admin on this device?")){LS.set("tt_token","");admin=false;tab="league";render();status()}}
+async function authenticate(pin){
+  const r=await api("/auth/login",{method:"POST",body:JSON.stringify({pin})});
+  sessionRole=r.role||"";admin=sessionRole==="admin"||sessionRole==="owner";owner=sessionRole==="owner";
+  gateErr=false;await load();render();status();
+}
+function login(){if(admin)return;const p=prompt("Admin PIN");if(!p)return;authenticate(p).catch(()=>{gateErr=true;render()})}
+async function logout(){if(!confirm("Log out on this device?"))return;try{await api("/auth/logout",{method:"POST"})}catch(e){}sessionRole="";admin=false;owner=false;tab="welcome";render();status()}
 const LINKS=[["Snooker","Darts","double"],["Can-Off","Mölkky","double"],["Basketball Hot Seat","Basketball Round the World",null]];
 function linkPairs(from){LINKS.forEach(([a,b,t],i)=>{if(from&&i<from)return;const x=S.events.find(e=>e.name===a),y=S.events.find(e=>e.name===b);if(x&&y){x.link=y.id;y.link=x.id;if(t){x.type=t;y.type=t}if(![...(x.matches||[]),...(y.matches||[])].some(m=>m.w!==null)){x.matches=[];y.matches=[];x.po={};y.po={}}}})}
 function setSportMvp(id,v){S.res=S.res||{};if(v)S.res[id]=[[v,1]];else delete S.res[id];save()}
@@ -381,8 +383,8 @@ function splitEvents(){const out=[];S.events.forEach(e=>{
   else if(e.name.startsWith("Basketball: Killer")){e.name="Basketball Killer";e.matches=[];e.po={};out.push(e,cl("Basketball Hot Seat",{size:4,notes:"4v4"}),cl("Basketball Round the World",{size:4,notes:"4v4"}))}
   else out.push(e)});S.events=out}
 async function sha(p){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("lc27:"+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
-async function setPin(){if(!owner)return;const p=prompt("Choose an owner PIN. Don't share it with captains.");if(!p)return;S.ownerHash=await sha(p);LS.set("tt_owner",S.ownerHash);save()}
-async function ownerLogin(){if(!admin)return;if(!S.ownerHash){alert("No owner PIN set yet. Open Setup to create one.");return}const p=prompt("Owner PIN");if(!p)return;if((await sha(p))===S.ownerHash){LS.set("tt_owner",S.ownerHash);render();status()}else alert("Wrong PIN")}
+async function setPin(){if(!owner)return;const p=prompt("Choose a new owner PIN. Don't share it with captains.");if(!p)return;try{await api("/api/pins",{method:"PUT",body:JSON.stringify({owner:p})});alert("Owner PIN changed.")}catch(e){alert(e.message||"Could not change owner PIN.")}}
+async function ownerLogin(){if(!admin)return;const p=prompt("Owner PIN");if(!p)return;try{await authenticate(p)}catch(e){alert("Wrong PIN")}}
 function setSize(id,v){const e=S.events.find(x=>x.id===id);if(+v>0)e.size=+v;else delete e.size;if(!(e.matches||[]).some(m=>m.w!==null))e.matches=[];save()}
 function setTime(id,v){S.events.find(x=>x.id===id).time=v;save()}
 function setF(id,k,v){const e=S.events.find(x=>x.id===id);e[k]=v;saveQuiet()}
@@ -534,10 +536,9 @@ function vWelcome(){
   <div class="mu" style="text-align:center;margin:18px 0">Last updated ${lu()}</div>`;
 }
 
-const gated=()=>!admin&&!!S.gp&&LS.get("tt_gp")!==S.gp;
-async function setGuestPin(){if(!owner)return;const p=prompt("Choose a guest PIN. You'll share it with the competitors.");if(!p)return;S.gp=await sha("guest:"+p);LS.set("tt_gp",S.gp);save()}
-function clearGuestPin(){if(!owner||!confirm("Remove the guest PIN? Anyone with the link will be able to open the site."))return;delete S.gp;save()}
-async function guestPin(){const el=$("#gp"),p=el&&el.value;if(!p)return;if((await sha("guest:"+p))===S.gp){LS.set("tt_gp",S.gp);gateErr=false;render()}else{gateErr=true;render()}}
+const gated=()=>!sessionRole;
+async function setGuestPin(){if(!owner)return;const p=prompt("Choose a guest PIN. You'll share it with the competitors.");if(!p)return;try{await api("/api/pins",{method:"PUT",body:JSON.stringify({guest:p})});alert("Guest PIN changed.")}catch(e){alert(e.message||"Could not change guest PIN.")}}
+async function guestPin(){const el=$("#gp"),p=el&&el.value;if(!p)return;try{await authenticate(p)}catch(e){gateErr=true;render()}}
 function gateView(){
   $("#nav").innerHTML="";
   $("#app").innerHTML=`<div class="banner" style="--g:linear-gradient(90deg,${S.teams[0].color},${S.teams[1].color})"><img src="${LOGO}" alt="The Lashbury Cup 2027"></div>`+(!loaded?`<p class="mu" style="text-align:center">Loading…</p>`:`<div class="card" style="text-align:center"><h2>🔒 Enter the PIN</h2><div class="mu">Ask the organiser for the PIN to view The Lashbury Cup.</div><input id="gp" type="password" autocomplete="off" placeholder="PIN" style="width:70%;margin:10px 0;text-align:center;font-size:20px" onkeydown="if(event.key==='Enter')guestPin()"><br><button class="b p" onclick="guestPin()">Enter</button>${gateErr?'<div style="color:#d64545;margin-top:8px">Wrong PIN, try again</div>':""}</div><p class="mu" style="text-align:center"><a href="#" onclick="login();return false">Admin login</a></p>`)}
@@ -555,21 +556,24 @@ function doDraw(id){
   draw(e);showDraw(e)}
 function delEv(id){if(!owner)return;if(confirm("Delete event?")){S.events=S.events.filter(e=>e.id!==id);save()}}
 function sendMsg(w){const t=$("#msg").value.trim();if(!t)return;post(t);if(w)wa(t);save()}
-function render(auto){owner=admin&&(!S.ownerHash||LS.get("tt_owner")===S.ownerHash);if(!owner&&(tab==="mvp"||tab==="setup"))tab="league";{const n=LS.get("tt_team");myTeam=(n!==null&&n!==""&&S.tp&&S.tp[+n]&&LS.get("tt_tc")===S.tp[+n])?+n:null}
+function render(auto){owner=sessionRole==="owner";if(!owner&&(tab==="mvp"||tab==="setup"))tab="league";{const n=LS.get("tt_team");myTeam=(n!==null&&n!==""&&S.tp&&S.tp[+n]&&LS.get("tt_tc")===S.tp[+n])?+n:null}
   if(!loaded||gated()){gateView();return}if(auto&&((ytOn&&document.querySelector("#yt iframe"))||(mapOn&&document.querySelector("#mp iframe"))))return;
   const v={welcome:vWelcome,teams:vTeams,league:vLeague,events:vEvents,pub:vPub,mvp:vMvp,feed:vFeed,setup:vSetup,timetable:timetable}[tab];
   const a=document.activeElement;if(a&&a.tagName==="TEXTAREA"&&a.id==="msg"&&a.value)return;
-  ytOn=false;const y=window.scrollY;$("#app").innerHTML=v();window.scrollTo(0,y);if(tab==="mvp"&&S.mvp&&!fired){fired=true;confetti()}
+  ytOn=false;const y=window.scrollY;const roleLabel=sessionRole==="owner"?"Owner":sessionRole==="admin"?"Admin":"Guest";$("#app").innerHTML=`<div class="row" style="justify-content:flex-end;align-items:center;margin:0 0 8px"><span class="mu">Signed in as ${roleLabel}</span><button class="b" onclick="logout()">Log out</button></div>`+v();window.scrollTo(0,y);if(tab==="mvp"&&S.mvp&&!fired){fired=true;confetti()}
   const tabs=[["welcome","🏠 Welcome"],["teams","👥 Teams"],["league","🏆 League"],["events","📊 Results"],["pub","🍻 Pub Golf"],["feed","💬 Updates"]];if(owner)tabs.splice(4,0,["mvp","⭐ MVP"]);if(owner)tabs.push(["setup","⚙️ Setup"]);
   $("#nav").innerHTML=tabs.map(([k,l])=>`<button class="${tab===k?"on":""}" onclick="tab='${k}';render()"><span style="font-size:17px;display:block">${l.split(" ")[0]}</span>${l.split(" ").slice(1).join(" ")}</button>`).join("");
 }
 try{const c=JSON.parse(LS.get("tt_local")||"null");if(c&&c.s&&c.s.teams)S=c.s}catch(e){}
+sessionRole="";admin=false;owner=false;
 try{render()}catch(e){document.body.innerHTML='<pre style="white-space:pre-wrap;padding:20px;font:16px monospace;color:#b00">Lashbury startup error\\n'+(e&&e.stack||e)+'</pre>'}
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=23").catch(()=>{});
-admin=!!LS.get("tt_token");{const mt=LS.get("tt_team");myTeam=mt===null||mt===""?null:+mt}
-try{ADM=JSON.parse(LS.get("tt_adm")||"{}")}catch(e){}
-try{const l=JSON.parse(LS.get("tt_local")||"null");if(admin&&l&&l.dirty&&l.s){S=l.s;dirty=true}}catch(e){}
-render();status();load().finally(()=>{migrate()});if(dirty)push();
-setInterval(load,30000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=24").catch(()=>{});
+async function initSession(){
+  try{const r=await api("/api/session");sessionRole=r.role||"";admin=sessionRole==="admin"||sessionRole==="owner";owner=sessionRole==="owner"}catch(e){sessionRole="";admin=false;owner=false}
+  render();
+  if(sessionRole)load();
+}
+initSession();
+setInterval(()=>{if(sessionRole)load()},30000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&sessionRole)load()});
 </script></body></html>

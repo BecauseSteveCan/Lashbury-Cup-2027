@@ -1,0 +1,7 @@
+name = "lashbury-security-preview2"
+main = "worker/preview.js"
+compatibility_date = "2026-10-09"
+
+[[kv_namespaces]]
+binding = "TOURNAMENT"
+id = "54f9983f5f414f45ac52cd8d0ad5fbed"
