@@ -1,96 +1,28 @@
-# Lashbury Cup secure API deployment
+# Lashbury Cup secure API — cut-over checklist
 
-This branch replaces the public `data.json` model with a Cloudflare Worker + Workers KV API.
+The production Cloudflare Worker, custom domain, secrets, and private Workers KV namespace are already configured. This checklist is for the existing setup.
 
-## 1. Create the KV namespace
+**Do not** create another KV namespace, replace production secrets, redeploy the Worker, or import `main:data.json` into production KV as part of this review. The production KV value already contains tournament data, and the Git copy may be stale.
 
-From the repository root:
+## Already checked
+- `https://api.lashbury.co.uk/health` returns `{"ok":true}`.
+- An unauthenticated request to `/api/data` is rejected.
+- The production Worker is bound to the existing `tournament:data` KV key.
+- Secure front-end changes are isolated on the review branch; the live front end has not been switched over.
 
-```bash
-cd worker
-npx wrangler kv namespace create TOURNAMENT --jurisdiction=eu
-```
+## Before merging
+1. Review the entire pull request and confirm automated checks pass.
+2. Test guest, admin, and owner roles in a preview environment. Confirm guest is read-only, admin can score/save, owner can access setup/PIN controls, and logout clears the session.
+3. Check mobile Safari and the installed PWA, including navigation, refresh, and offline recovery.
+4. Before any production write test, preserve a private recovery copy of the current production KV value using the Cloudflare dashboard or an approved secure method. Never put that copy in GitHub or a public issue.
+5. Test an admin edit against production only when ready: make one harmless, reversible change, verify the save succeeds, reload in a fresh session to confirm it persisted, then restore the original value and verify the restoration. Do not test with real scores or results.
+6. If any role, save, CORS, session, or PWA check fails, do not merge.
 
-Copy the returned namespace ID into `worker/wrangler.toml`, replacing `REPLACE_WITH_KV_NAMESPACE_ID`.
+## Cut-over order
+1. Publish the reviewed secure front end only after the checks above pass.
+2. Verify the live website at `https://lashbury.co.uk`: guest access, admin scoring/save, owner controls, logout, and the installed PWA.
+3. Keep `data.json` in the repository until the new front end is live and confirmed not to fetch it. Remove the current public file only after that verification.
+4. Treat historical Git cleanup as a separate step. Deleting a file from the latest commit does not remove it from old public commits; rewrite history only with a reviewed backup and recovery plan.
 
-## 2. Set the initial PINs
-
-Choose three different PINs:
-
-- `ADMIN_PIN` — allows scoring/editing.
-- `OWNER_PIN` — full owner/setup access.
-- `GUEST_PIN` — competitor read-only access.
-
-Set them as Worker secrets:
-
-```bash
-npx wrangler secret put ADMIN_PIN
-npx wrangler secret put OWNER_PIN
-npx wrangler secret put GUEST_PIN
-```
-
-The PIN values are never committed to GitHub.
-
-## 3. Deploy the API
-
-From `worker/`:
-
-```bash
-npx wrangler deploy
-```
-
-The Worker is configured for the custom domain `api.lashbury.co.uk`. Cloudflare Custom Domains can create the DNS record and certificate automatically.
-
-Test:
-
-```bash
-curl https://api.lashbury.co.uk/health
-```
-
-Expected response:
-
-```json
-{"ok":true}
-```
-
-## 4. Import the existing tournament data
-
-Do this before removing the old public data from the live site.
-
-From the repository root, get the current production data from the `main` branch:
-
-```git
-git show main:data.json > /tmp/lashbury-data.json
-```
-
-Then, from the repository root:
-
-```bash
-npx wrangler kv key put tournament:data --path /tmp/lashbury-data.json --binding TOURNAMENT --remote
-```
-
-The data is now stored in private Workers KV rather than served as a public file.
-
-## 5. Verify authentication
-
-The Worker exposes:
-
-- `POST /auth/login` — PIN login; creates a secure HttpOnly session cookie.
-- `GET /api/session` — checks the current session.
-- `GET /api/data` — returns tournament data only to an authenticated session.
-- `PUT /api/data` — writes tournament data for admin/owner sessions.
-- `PUT /api/pins` — changes PINs for the owner.
-- `POST /auth/logout` — destroys the session.
-
-## 6. Only then publish the frontend
-
-The `security-v1` branch contains the frontend changes, but it is deliberately not being merged to `main` yet.
-
-Once the Worker is live and the data import is verified, merge this branch into `main`. The frontend will then stop requesting GitHub's public `data.json`.
-
-The old `data.json` should remain deleted from `main` after the cut-over.
-
-## Important
-
-Do not commit the PINs, Cloudflare API tokens, or any exported tournament data into the repository.
-
+## Security
+Never commit PINs, Cloudflare API tokens, session cookies, or exported tournament data. Never paste production secrets into logs, screenshots, issues, or pull requests.
