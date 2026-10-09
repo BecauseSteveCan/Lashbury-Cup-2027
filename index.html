@@ -366,7 +366,6 @@ async function load(){
     lastSync=Date.now();status();
     if(dirty||t===sig)return;
     if(!d||!d.teams||!d.events)return;
-    if(S.ts&&(d.ts||0)<=S.ts)return;
     S=d;sig=t;BASE=t;LS.set("tt_base",t);LS.set("tt_local",JSON.stringify({s:S,dirty:false}));
     loaded=true;render(true);migrate();status();
   }catch(e){
