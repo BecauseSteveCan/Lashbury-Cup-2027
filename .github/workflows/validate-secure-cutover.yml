@@ -1,0 +1,32 @@
+name: Validate secure cutover front end
+
+on:
+  push:
+    branches:
+      - security-cutover-review
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'index.html'
+      - '.github/workflows/validate-secure-cutover.yml'
+
+jobs:
+  javascript-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract inline JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("index.html").read_text()
+          scripts = re.findall(r"<script\\b[^>]*>([\\s\\S]*?)</script>", html, re.I)
+          if not scripts:
+              raise SystemExit("No inline script found")
+          Path("/tmp/inline.js").write_text("\\n".join(scripts))
+          print(f"Extracted {len(scripts)} inline script block(s)")
+          PY
+      - name: Check JavaScript syntax
+        run: node --check /tmp/inline.js
