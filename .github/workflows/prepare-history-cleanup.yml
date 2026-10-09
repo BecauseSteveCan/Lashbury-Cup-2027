@@ -41,7 +41,8 @@ jobs:
       - name: Remove data.json from all reachable history
         run: |
           set -euo pipefail
-          git-filter-repo --git-dir cleanup.git --invert-paths --path data.json --force
+          cd cleanup.git
+          git-filter-repo --invert-paths --path data.json --force
 
       - name: Verify cleaned history and branch preservation
         run: |
