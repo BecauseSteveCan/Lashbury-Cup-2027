@@ -63,8 +63,9 @@ jobs:
 
       - name: Create downloadable cleaned mirror bundle
         run: |
-          git --git-dir=cleanup.git bundle create cleaned-history.bundle --all
-          git bundle verify cleaned-history.bundle
+          set -euo pipefail
+          git --git-dir=cleanup.git bundle create "$GITHUB_WORKSPACE/cleaned-history.bundle" --all
+          git --git-dir=cleanup.git bundle verify "$GITHUB_WORKSPACE/cleaned-history.bundle"
 
       - name: Upload cleaned bundle for review (no repository push)
         uses: actions/upload-artifact@v4
