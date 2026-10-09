@@ -376,7 +376,7 @@ async function load(){
 async function authenticate(pin){
   const r=await api("/auth/login",{method:"POST",body:JSON.stringify({pin})});
   sessionRole=r.role||"";admin=sessionRole==="admin"||sessionRole==="owner";owner=sessionRole==="owner";
-  gateErr=false;gateMessage="";await load();render();status();authNotice("Signed in successfully as "+(owner?"Owner":"Admin")+".");
+  gateErr=false;gateMessage="";await load();render();status();authNotice("Signed in successfully as "+(owner?"Owner":admin?"Admin":"Guest")+".");
 }
 function login(){if(admin)return;const p=prompt("Admin PIN");if(!p)return;authenticate(p).catch(e=>{gateErr=true;gateMessage=(e.message&&/too many failed attempts|15 minutes/i.test(e.message))?"Too many failed attempts. Please wait 15 minutes before trying again.":"Incorrect PIN. Please try again.";render();authNotice(gateMessage,"error")})}
 async function logout(){if(!confirm("Log out on this device?"))return;try{await api("/auth/logout",{method:"POST"})}catch(e){}sessionRole="";admin=false;owner=false;tab="welcome";render();status();authNotice("You’ve been logged out.");}
