@@ -1,0 +1,31 @@
+name: Deploy isolated security preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_preview_only:
+        description: "Type PREVIEW to deploy lashbury-security-preview2 only"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ inputs.confirm_preview_only == 'PREVIEW' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out security branch
+        uses: actions/checkout@v4
+        with:
+          ref: security-v1
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Deploy isolated preview Worker only
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: deploy --config wrangler-preview.toml
