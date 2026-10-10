@@ -59,8 +59,8 @@ jobs:
       - name: Check front-end JavaScript syntax
         run: node --check /tmp/inline.js
       - name: Check Worker JavaScript syntax
-        run: cp worker/src/index.js /tmp/worker.mjs && node --check /tmp/worker.mjs
+        run: cp worker/src/index.js worker/src/index.mjs && node --check worker/src/index.mjs
       - name: Test Worker authorization, sessions, CORS and throttling
         run: |
-          cp worker/src/index.js /tmp/worker.mjs
-          WORKER_MODULE="file:///tmp/worker.mjs" node --test tests/security-worker.test.mjs
+          cp worker/src/index.js worker/src/index.mjs
+          node --test tests/security-worker.test.mjs
