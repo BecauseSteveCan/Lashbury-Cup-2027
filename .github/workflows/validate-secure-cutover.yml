@@ -1,0 +1,66 @@
+name: Validate secure cutover front end and API
+
+on:
+  push:
+    branches:
+      - security-cutover-review
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'index.html'
+      - 'worker/**'
+      - 'tests/**'
+      - '.github/workflows/validate-secure-cutover.yml'
+
+jobs:
+  javascript-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Extract inline JavaScript
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.in_script = False
+                  self.parts = []
+                  self.blocks = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() == "script":
+                      self.in_script = True
+                      self.parts = []
+
+              def handle_data(self, data):
+                  if self.in_script:
+                      self.parts.append(data)
+
+              def handle_endtag(self, tag):
+                  if tag.lower() == "script" and self.in_script:
+                      self.blocks.append("".join(self.parts))
+                      self.in_script = False
+
+          parser = Scripts()
+          parser.feed(Path("index.html").read_text())
+          blocks = [block for block in parser.blocks if block.strip()]
+          if not blocks:
+              raise SystemExit("No inline script found")
+          Path("/tmp/inline.js").write_text("\n".join(blocks))
+          print(f"Extracted {len(blocks)} inline script block(s)")
+          PY
+      - name: Check front-end JavaScript syntax
+        run: node --check /tmp/inline.js
+      - name: Check Worker JavaScript syntax
+        run: cp worker/src/index.js worker/src/index.mjs && node --check worker/src/index.mjs
+      - name: Test Worker authorization, sessions, CORS and throttling
+        run: |
+          cp worker/src/index.js worker/src/index.mjs
+          node --test tests/security-worker.test.mjs

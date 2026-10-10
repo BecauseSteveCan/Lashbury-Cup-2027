@@ -1,4 +1,4 @@
-const C="lc27-v23";
+const C="lc27-v24";
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(["./","./index.html","./manifest.json","./icons/lashbury-cup-icon.png","./icons/icon-192.png","./icons/icon-512.png"])).catch(()=>{}))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener("fetch",e=>{
@@ -6,9 +6,6 @@ self.addEventListener("fetch",e=>{
   if(r.method!=="GET"||u.origin!==location.origin)return;
   e.respondWith((async()=>{
     const c=await caches.open(C);
-    if(u.pathname.endsWith("/data.json")){
-      return (await fetch(r,{cache:"no-store"}).catch(()=>null)) || (await c.match(r,{ignoreSearch:true})) || Response.error();
-    }
     if(r.mode==="navigate"||u.pathname.endsWith("/index.html")){
       const bust=new URL(r.url);
       bust.searchParams.set("_sw",Date.now().toString());

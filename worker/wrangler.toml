@@ -1,0 +1,17 @@
+name = "lashbury-cup-api"
+main = "src/index.js"
+compatibility_date = "2026-10-08"
+
+[[kv_namespaces]]
+binding = "TOURNAMENT"
+id = "7955d992b6ae41aaa249ddf42ce9494a"
+
+[[routes]]
+pattern = "api.lashbury.co.uk"
+custom_domain = true
+
+[vars]
+CORS_ORIGIN = "https://lashbury.co.uk"
+
+[secrets]
+required = ["ADMIN_PIN", "OWNER_PIN", "GUEST_PIN"]
