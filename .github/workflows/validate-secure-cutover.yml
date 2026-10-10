@@ -1,4 +1,4 @@
-name: Validate secure cutover front end
+name: Validate secure cutover front end and API
 
 on:
   push:
@@ -9,6 +9,8 @@ on:
       - main
     paths:
       - 'index.html'
+      - 'worker/**'
+      - 'tests/**'
       - '.github/workflows/validate-secure-cutover.yml'
 
 jobs:
@@ -16,6 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Extract inline JavaScript
         run: |
           python - <<'PY'
@@ -51,5 +56,11 @@ jobs:
           Path("/tmp/inline.js").write_text("\n".join(blocks))
           print(f"Extracted {len(blocks)} inline script block(s)")
           PY
-      - name: Check JavaScript syntax
+      - name: Check front-end JavaScript syntax
         run: node --check /tmp/inline.js
+      - name: Check Worker JavaScript syntax
+        run: cp worker/src/index.js /tmp/worker.mjs && node --check /tmp/worker.mjs
+      - name: Test Worker authorization, sessions, CORS and throttling
+        run: |
+          cp worker/src/index.js /tmp/worker.mjs
+          WORKER_MODULE="file:///tmp/worker.mjs" node --test tests/security-worker.test.mjs
