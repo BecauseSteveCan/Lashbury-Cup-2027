@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker from process.env.WORKER_MODULE;
+import worker from "../worker/src/index.mjs";
 
 class MemoryKV {
   data = new Map();
